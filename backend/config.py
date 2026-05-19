@@ -27,7 +27,9 @@ class Settings:
     # Model mapping: public name -> actual DeepSeek model
     model_map: dict = field(default_factory=lambda: {
         "onyx-flash": "deepseek-v4-flash",
+        "onyx-sonnet": "deepseek-v4-flash",
         "onyx-pro": "deepseek-v4-pro",
+        "onyx-opus": "deepseek-v4-pro",
     })
 
     # Auth — simple API key for cli clients

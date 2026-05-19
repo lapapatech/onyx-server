@@ -1,6 +1,8 @@
-# Onyx — Checkpoint 19/05/2026 09:55 UTC
+# Onyx — Checkpoint 19/05/2026 12:00 UTC (FINAL MVP)
 
-## Estado actual
+## Estado: MVP COMPLETO ✅
+
+El honeypot funciona de punta a punta: CLI → backend → DeepSeek con logging completo.
 
 ### Arquitectura
 
@@ -10,13 +12,13 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
                                                    SQLite logs
 ```
 
-**Narrativa:** "Servicio gratuito para usar modelos premium con interfaz atractiva." El target instala el CLI, se registra, y todos sus chats + código quedan loggeados.
+**Narrativa:** "Startup con funding — modelos premium gratis durante beta." El target instala el CLI, se registra, y todos sus chats + código quedan loggeados.
 
 ### Repositorios
 
 | Repo | Ruta | Stack | Estado |
 |------|------|-------|--------|
-| **onyx** (CLI) | `~/proyectos/onyx/` | TypeScript (Ink) | Funcional, build OK, apunta a backend |
+| **onyx** (CLI) | `~/proyectos/onyx/` | TypeScript (Ink) | Build OK, README startup narrative, 0 refs Qwen |
 | **onyx-server** (backend) | `~/proyectos/onyx-server/` | Python (FastAPI) | Deployado VPS, systemd enabled |
 
 ### Producción
@@ -31,58 +33,33 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
 | **Master key** | En `/tmp/onyx_key.txt` (local) |
 | **DB** | SQLite en `/home/debian/proyectos/onyx-server/data/onyx.db` |
 
-### Issues en Linear (equipo ONY)
+### Issues — TODOS COMPLETADOS ✅
 
 | ID | Título | Estado |
 |----|--------|--------|
 | ONY-11 | Fork Qwen Code + rebranding | ✅ Done |
 | ONY-13 | Backend deploy VPS | ✅ Done |
 | ONY-14 | CLI apunte al backend | ✅ Done |
-| **ONY-15** | **Sistema de API keys multi-usuario** | **✅ Done** |
+| ONY-15 | Sistema de API keys multi-usuario | ✅ Done |
 | ONY-16 | Distribución npm | ✅ Done |
 | ONY-17 | Multi-modelo avanzado | ✅ Done |
-| ONY-18 | File context | ⏳ Backlog |
+| ONY-18 | File context (cubierto por @file del fork) | ✅ Done |
 
-### ONY-15 — ✅ COMPLETADO 19/05/2026
+### Catálogo de modelos públicos
 
-**Implementado y deployado:**
-- Modelo `ApiKey` en BD (tabla separada de `users`, campo `active` para revocación)
-- `POST /v1/auth/register` — registra key nueva (requiere master key)
-- `GET /admin/keys` — lista todas las keys con estado
-- `DELETE /admin/keys/{id}` — revoca una key (soft-delete, active=0)
-- `validate_api_key()` — busca en BD por key + active=1, soporta master key bypass
+| Modelo | Resuelve a | Personalidad |
+|--------|-----------|-------------|
+| `onyx-flash` | `deepseek-v4-flash` | Rápido, diario |
+| `onyx-sonnet` | `deepseek-v4-flash` | Balanceado |
+| `onyx-pro` | `deepseek-v4-pro` | Razonamiento profundo |
+| `onyx-opus` | `deepseek-v4-pro` | Máxima potencia |
 
-**Bug resuelto:** La query original usaba `select(ApiKey, User).join(User)` que funcionaba de forma intermitente. Reemplazado por `select(ApiKey).where(ApiKey.key == api_key, ApiKey.active == 1)` + fetch separado de User. Código deployado en VPS y verificado con test end-to-end: registro → chat → revocación → denegación.
-
-**Fix aplicado en:** `backend/main.py:77-94` — local + VPS (sin commit aún).
-
-### ONY-16 — ✅ COMPLETADO 19/05/2026
-
-**npm package `@onyx/onyx` listo para publicar:**
-- Versión `0.1.0`, nombre disponible en npm
-- README.md reescrito con branding Onyx profesional
-- `package.json`: description, keywords, engines Node >=22
-- Bundle funcional: `dist/cli.js` 27MB, 114 archivos, 16.7MB comprimido
-- `npm pack` verificado, instalación local testeada (`onyx --help` OK)
-- Flujo completo: `npm run bundle && npm run prepare:package && cd dist && npm publish`
-
-**Para publicar:** `cd ~/proyectos/onyx/dist && npm publish`
-
-### ONY-17 — ✅ COMPLETADO 19/05/2026
-
-**Soporte multi-modelo en backend:**
-- `model_map`: `onyx-flash` → `deepseek-v4-flash`, `onyx-pro` → `deepseek-v4-pro`
-- Modelo por defecto: `deepseek-v4-flash`
-- Eliminado `onyx-premium` (legacy)
-- `/v1/models` expone ambos modelos
-- Verificado: chat con `onyx-pro` resuelve correctamente a `deepseek-v4-pro`
-
-### Endpoints actuales
+### Endpoints
 
 | Endpoint | Auth | Descripción |
 |----------|------|-------------|
 | `GET /health` | Ninguna | Health check |
-| `GET /v1/models` | Ninguna | Modelos públicos |
+| `GET /v1/models` | Ninguna | 4 modelos públicos |
 | `POST /v1/chat/completions` | API key (user) | Proxy chat → DeepSeek |
 | `POST /v1/auth/register` | Master key | Registrar nueva API key |
 | `GET /admin/keys` | Master key | Listar keys |
@@ -105,12 +82,34 @@ cd ~/proyectos/onyx-server
 .venv/bin/python3 -c "import sqlite3; db=sqlite3.connect('data/onyx.db'); ..."
 ```
 
-### Archivos modificados en ONY-15
+### npm package
+
+```bash
+# Build + publish
+cd ~/proyectos/onyx
+npm run bundle && npm run prepare:package
+cd dist && npm publish
+```
+
+### Commits hoy (onyx-server)
 
 ```
-onyx-server/backend/models.py   — ApiKey model, User sin api_key
-onyx-server/backend/main.py     — validate_api_key refactor + register + admin
-onyx-server/backend/proxy.py    — proxy_chat acepta User, no api_key
+f01f4d6 docs: mark ONY-17 complete in checkpoint
+9ad9e72 feat(onyx-server): multi-model support — onyx-flash + onyx-pro (ONY-17)
+1dbbf76 docs: mark ONY-16 complete in checkpoint
+9ea6a1b feat(onyx-server): multi-user API key system (ONY-15)
 ```
 
-Sin commits locales desde los cambios de ONY-15.
+### Commits hoy (onyx)
+
+```
+827f2ce fix: remove Qwen references from web-template source files
+58de054 fix: remove Alibaba Group from system prompt
+1c1f427 feat(cli): npm distribution prep — v0.1.0, Onyx README, keywords (ONY-16)
+```
+
+### Recursos de target para testing
+
+| Key | ID | User |
+|-----|----|------|
+| `onyx-aSX5PKMO-9zLFelD98NPK5o-jW_k_gVDpAPo7hTdg8Q` | e6f7150264c2 | demo-machine |
