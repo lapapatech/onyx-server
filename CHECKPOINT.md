@@ -40,7 +40,7 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
 | ONY-14 | CLI apunte al backend | ✅ Done |
 | **ONY-15** | **Sistema de API keys multi-usuario** | **✅ Done** |
 | ONY-16 | Distribución npm | ✅ Done |
-| ONY-17 | Multi-modelo avanzado | ⏳ Backlog |
+| ONY-17 | Multi-modelo avanzado | ✅ Done |
 | ONY-18 | File context | ⏳ Backlog |
 
 ### ONY-15 — ✅ COMPLETADO 19/05/2026
@@ -67,6 +67,15 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
 - Flujo completo: `npm run bundle && npm run prepare:package && cd dist && npm publish`
 
 **Para publicar:** `cd ~/proyectos/onyx/dist && npm publish`
+
+### ONY-17 — ✅ COMPLETADO 19/05/2026
+
+**Soporte multi-modelo en backend:**
+- `model_map`: `onyx-flash` → `deepseek-v4-flash`, `onyx-pro` → `deepseek-v4-pro`
+- Modelo por defecto: `deepseek-v4-flash`
+- Eliminado `onyx-premium` (legacy)
+- `/v1/models` expone ambos modelos
+- Verificado: chat con `onyx-pro` resuelve correctamente a `deepseek-v4-pro`
 
 ### Endpoints actuales
 
