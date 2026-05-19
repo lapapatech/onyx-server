@@ -7,7 +7,7 @@
 ## Arquitectura
 
 ```
-Usuario → onyx-qwen (CLI bonito, Ink/React) → Backend Onyx (FastAPI) → DeepSeek
+Usuario → onyx (CLI bonito, Ink/React) → Backend Onyx (FastAPI) → DeepSeek
                                                       ↓
                                               SQLite: mensajes, código,
                                               sesiones, tokens, usuarios
@@ -15,8 +15,8 @@ Usuario → onyx-qwen (CLI bonito, Ink/React) → Backend Onyx (FastAPI) → Dee
 
 | Capa | Repo | Stack | Lo que ve el usuario |
 |------|------|-------|---------------------|
-| **Frontend (CLI)** | `~/proyectos/onyx-qwen/` | TypeScript, Ink (React), ESM | CLI premium tipo Codebuff, interfaz atractiva |
-| **Backend (proxy)** | `~/proyectos/onyx/` | Python 3.11+, FastAPI, SQLite | API OpenAI-compatible (invisible para el usuario) |
+| **Frontend (CLI)** | `~/proyectos/onyx/` | TypeScript, Ink (React), ESM | CLI premium tipo Codebuff, interfaz atractiva |
+| **Backend (proxy)** | `~/proyectos/onyx-server/` | Python 3.11+, FastAPI, SQLite | API OpenAI-compatible (invisible para el usuario) |
 | **Modelo real** | DeepSeek API | `deepseek-v4-flash` / `deepseek-v4-pro` | Nunca lo ve |
 
 El backend expone modelos "premium" (`onyx-premium`, `onyx-flash`) que en realidad son DeepSeek. La API key del usuario es la llave de tracking: todo lo que envía queda asociado a su key.
@@ -36,10 +36,10 @@ Grupos pequeños. El operador pone el backend en su VPS, distribuye el CLI a los
 
 | Repo | Ruta | Rol |
 |------|------|-----|
-| **onyx** (backend) | `~/proyectos/onyx/` | FastAPI proxy → DeepSeek. API OpenAI-compatible. Logging. |
-| **onyx-qwen** (frontend) | `~/proyectos/onyx-qwen/` | CLI con TUI bonito (Ink/React). Fork de Qwen Code. |
+| **onyx-server** (backend) | `~/proyectos/onyx-server/` | FastAPI proxy → DeepSeek. API OpenAI-compatible. Logging. |
+| **onyx** (frontend) | `~/proyectos/onyx/` | CLI con TUI bonito (Ink/React). Fork de Qwen Code. |
 
-**El CLI que ve el usuario es onyx-qwen.** El backend onyx es invisible.
+**El CLI que ve el usuario es onyx.** El backend onyx-server es invisible.
 
 ## Estado actual
 
@@ -111,7 +111,7 @@ El fork está completamente rebrandeado y configurado para apuntar al backend On
 ## Arranque
 
 ```bash
-cd /home/plasencio/proyectos/onyx
+cd /home/plasencio/proyectos/onyx-server
 source .venv/bin/activate
 export $(grep DEEPSEEK_API_KEY ~/.hermes/.env)
 export ONYX_API_KEY="tu-clave"
@@ -131,4 +131,4 @@ python admin/query_logs.py --recent 20  # Últimos mensajes
 - Backend corriendo en localhost:8000
 - Si hay errores de auth en ONYX_API_KEY, verificar env var
 - Si hay problemas de importación, `pip install -e .` reinstala el paquete
-- El fork de Qwen Code está en `~/proyectos/onyx-qwen/` — ver su AGENTS.md
+- El fork de Qwen Code está en `~/proyectos/onyx/` (CLI) — ver su AGENTS.md

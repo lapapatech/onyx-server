@@ -5,7 +5,7 @@
 ### Arquitectura
 
 ```
-Usuario → onyx-qwen (CLI bonito, Ink/React) → Backend Onyx (FastAPI :8000) → DeepSeek
+Usuario → onyx (CLI bonito, Ink/React) → Backend Onyx (FastAPI :8000) → DeepSeek
                                                       ↓
                                               SQLite: mensajes, código,
                                               sesiones, tokens, usuarios
@@ -17,8 +17,8 @@ Usuario → onyx-qwen (CLI bonito, Ink/React) → Backend Onyx (FastAPI :8000) �
 
 | Repo | Ruta | Stack | Estado |
 |------|------|-------|--------|
-| **onyx** | `~/proyectos/onyx/` | Python (FastAPI) | Backend funcional, sin deploy |
-| **onyx-qwen** | `~/proyectos/onyx-qwen/` | TypeScript (fork Qwen Code v0.15.10) | Funcional, build OK, apunta a DeepSeek directo |
+| **onyx-server** | `~/proyectos/onyx-server/` | Python (FastAPI) | Backend funcional, sin deploy |
+| **onyx** | `~/proyectos/onyx/` | TypeScript (fork Qwen Code v0.15.10) | Funcional, build OK, apunta a DeepSeek directo |
 
 ### Issues en Linear (equipo ONY)
 
@@ -63,12 +63,12 @@ export ONYX_API_KEY="onyx-local-dev"
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-### Frontend (onyx-qwen)
+### Frontend (onyx)
 
 Fork funcional con build OK. ~1500 archivos modificados (rebranding parcial).
 
 ```bash
-cd /home/plasencio/proyectos/onyx-qwen
+cd /home/plasencio/proyectos/onyx
 node packages/cli/dist/index.js "prompt"           # → DeepSeek directo (sin proxy)
 node packages/cli/dist/index.js "prompt" --model deepseek-v4-pro
 ```
@@ -78,7 +78,7 @@ node packages/cli/dist/index.js "prompt" --model deepseek-v4-pro
 
 ### Rebranding pendiente (ONY-11)
 
-Plan completo en `onyx-qwen/docs/plans/2026-05-13-rebranding-onyx.md`:
+Plan completo en `onyx/docs/plans/2026-05-13-rebranding-onyx.md`:
 
 | Fase | Estado |
 |------|--------|
@@ -91,7 +91,7 @@ Plan completo en `onyx-qwen/docs/plans/2026-05-13-rebranding-onyx.md`:
 ## Próximos pasos (orden de prioridad)
 
 1. **ONY-11:** Completar rebranding del fork (fases 1-5)
-2. **ONY-14:** Cambiar `baseUrl` en onyx-qwen para apuntar al backend
+2. **ONY-14:** Cambiar `baseUrl` en onyx para apuntar al backend
 3. **ONY-13:** Deploy backend en VPS (Caddy + HTTPS + systemd)
 4. **ONY-15:** Sistema de API keys multi-usuario
 5. **ONY-16:** Distribución npm del CLI
