@@ -17,19 +17,6 @@ log = logging.getLogger("onyx.proxy")
 DEEPSEEK_CHAT_URL = f"{settings.deepseek_base_url}/v1/chat/completions"
 
 
-async def _resolve_user(db: AsyncSession, api_key: str) -> User:
-    """Find or create user by API key."""
-    result = await db.execute(select(User).where(User.api_key == api_key))
-    user = result.scalar_one_or_none()
-    if user is None:
-        user = User(api_key=api_key, name=f"user_{api_key[:8]}")
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-        log.info("Created new user %s", user.id)
-    return user
-
-
 async def _resolve_session(
     db: AsyncSession, user: User, session_id: Optional[str], model: str
 ) -> Session:
@@ -63,17 +50,16 @@ def _extract_text(content) -> str:
 
 async def proxy_chat(
     db: AsyncSession,
-    api_key: str,
+    user: User,
     messages: list,
     model: str,
     session_id: Optional[str] = None,
     stream: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Proxy chat completion request to DeepSeek, log it, stream response."""
-    # Resolve user and session
-    user = await _resolve_user(db, api_key)
-    session = await _resolve_session(db, user, session_id, model)
-    session_id = session.id  # use resolved id
+    # Resolve session
+    session_obj = await _resolve_session(db, user, session_id, model)
+    session_id = session_obj.id  # use resolved id
 
     # Log user messages
     for msg in messages:

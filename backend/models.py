@@ -23,12 +23,26 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String, primary_key=True, default=_new_id)
-    api_key = Column(String(64), unique=True, nullable=False, index=True)
     name = Column(String(128), default="")
     created_at = Column(DateTime, default=_utcnow)
     last_seen = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
+    api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(String, primary_key=True, default=_new_id)
+    key = Column(String(64), unique=True, nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    name = Column(String(128), default="")
+    active = Column(Integer, default=1)  # 1=active, 0=revoked
+    created_at = Column(DateTime, default=_utcnow)
+    last_used_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="api_keys")
 
 
 class Session(Base):
