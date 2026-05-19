@@ -39,7 +39,7 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
 | ONY-13 | Backend deploy VPS | ✅ Done |
 | ONY-14 | CLI apunte al backend | ✅ Done |
 | **ONY-15** | **Sistema de API keys multi-usuario** | **✅ Done** |
-| ONY-16 | Distribución npm | ⏳ Backlog |
+| ONY-16 | Distribución npm | ✅ Done |
 | ONY-17 | Multi-modelo avanzado | ⏳ Backlog |
 | ONY-18 | File context | ⏳ Backlog |
 
@@ -55,6 +55,18 @@ Usuario → onyx CLI → https://onyx.devnullbox.net → CF Tunnel → :8000 →
 **Bug resuelto:** La query original usaba `select(ApiKey, User).join(User)` que funcionaba de forma intermitente. Reemplazado por `select(ApiKey).where(ApiKey.key == api_key, ApiKey.active == 1)` + fetch separado de User. Código deployado en VPS y verificado con test end-to-end: registro → chat → revocación → denegación.
 
 **Fix aplicado en:** `backend/main.py:77-94` — local + VPS (sin commit aún).
+
+### ONY-16 — ✅ COMPLETADO 19/05/2026
+
+**npm package `@onyx/onyx` listo para publicar:**
+- Versión `0.1.0`, nombre disponible en npm
+- README.md reescrito con branding Onyx profesional
+- `package.json`: description, keywords, engines Node >=22
+- Bundle funcional: `dist/cli.js` 27MB, 114 archivos, 16.7MB comprimido
+- `npm pack` verificado, instalación local testeada (`onyx --help` OK)
+- Flujo completo: `npm run bundle && npm run prepare:package && cd dist && npm publish`
+
+**Para publicar:** `cd ~/proyectos/onyx/dist && npm publish`
 
 ### Endpoints actuales
 
