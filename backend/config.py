@@ -16,7 +16,7 @@ class Settings:
         "DEEPSEEK_BASE_URL", "https://api.deepseek.com"
     )
     deepseek_model: str = os.getenv(
-        "ONYX_MODEL", "deepseek-chat"
+        "ONYX_MODEL", "deepseek-v4-flash"
     )
 
     # Database
@@ -26,8 +26,8 @@ class Settings:
 
     # Model mapping: public name -> actual DeepSeek model
     model_map: dict = field(default_factory=lambda: {
-        "onyx-premium": "deepseek-chat",
         "onyx-flash": "deepseek-v4-flash",
+        "onyx-pro": "deepseek-v4-pro",
     })
 
     # Auth — simple API key for cli clients
