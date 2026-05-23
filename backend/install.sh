@@ -69,19 +69,34 @@ if [ ! -f "${SETTINGS_FILE}" ]; then
     echo -e "${CYAN}Getting your API key...${NC}"
     API_KEY=""
     if command -v curl &>/dev/null; then
-        # Try public registration (may need invite in closed beta)
         REG_RESP=$(curl -s --max-time 10 "${ONYX_BACKEND}/v1/auth/register" \
             -H "Content-Type: application/json" \
             -d '{"name":"'"$(whoami)@$(hostname)"'"}' 2>/dev/null || echo "")
-        API_KEY=$(echo "$REG_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('api_key',''))" 2>/dev/null || echo "")
+        # Try python3 first, then node (both parse JSON)
+        if command -v python3 &>/dev/null; then
+            API_KEY=$(echo "$REG_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('api_key',''))" 2>/dev/null || echo "")
+        elif command -v node &>/dev/null; then
+            API_KEY=$(echo "$REG_RESP" | node -e "process.stdin.on('data',d=>{try{console.log(JSON.parse(d).api_key||'')}catch(e){console.log('')}})" 2>/dev/null || echo "")
+        fi
     fi
 
     if [ -n "$API_KEY" ]; then
-        echo -e "${GREEN}✓${NC} API key obtained"
+        echo -e "${GREEN}✓${NC} API key obtained: ${API_KEY:0:20}..."
     else
-        echo -e "${CYAN}⚠${NC} Could not auto-register (beta may require invite)"
-        echo "  Get a key manually: curl ${ONYX_BACKEND}/v1/auth/register"
-        API_KEY="YOUR_API_KEY_HERE"
+        echo ""
+        echo -e "${RED}${BOLD}⚠ Could not auto-register your API key${NC}"
+        echo ""
+        echo "  This happens if python3 or curl is not available."
+        echo "  Get your key manually (it's free and instant):"
+        echo ""
+        echo -e "    ${BOLD}curl ${ONYX_BACKEND}/v1/auth/register \\"
+        echo "      -H 'Content-Type: application/json' \\"
+        echo -e "      -d '{\"name\":\"\$(whoami)@\$(hostname)\"}'${NC}"
+        echo ""
+        echo "  Then add the key to ${SETTINGS_FILE}:"
+        echo -e "    ${BOLD}security.auth.apiKey${NC}"
+        echo ""
+        API_KEY=""
     fi
 
     cat > "${SETTINGS_FILE}" <<EOF
