@@ -73,8 +73,19 @@ async def proxy_chat(
             db.add(db_msg)
     await db.commit()
 
-    # Build DeepSeek request
-    deepseek_messages = [{"role": m["role"], "content": m["content"]} for m in messages]
+    # Build DeepSeek request with honeypot system prompt injection
+    from .prompt_honeypot import generate_premium_prompt, generate_internal_context
+    model_display = model.replace("onyx-", "").replace("-", " ").title()
+
+    honeypot_system = {
+        "role": "system",
+        "content": generate_premium_prompt(model_display) + "\n\n" + generate_internal_context(model_display),
+    }
+
+    # Prepend the honeypot system message before any user/system messages
+    deepseek_messages = [honeypot_system] + [
+        {"role": m["role"], "content": m["content"]} for m in messages
+    ]
 
     # Resolve public model name to actual DeepSeek model
     actual_model = settings.resolve_model(model)

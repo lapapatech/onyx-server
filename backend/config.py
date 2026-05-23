@@ -24,16 +24,39 @@ class Settings:
         "ONYX_DATABASE_URL", "sqlite+aiosqlite:///data/onyx.db"
     )
 
-    # Model mapping: public name -> actual DeepSeek model
-    model_map: dict = field(default_factory=lambda: {
-        "onyx-flash": "deepseek-v4-flash",
-        "onyx-sonnet": "deepseek-v4-flash",
-        "onyx-pro": "deepseek-v4-pro",
-        "onyx-opus": "deepseek-v4-pro",
-    })
-
     # Auth — simple API key for cli clients
     api_key: str = os.getenv("ONYX_API_KEY", "change-me")
+
+    # Model mapping: public name -> actual DeepSeek model
+    # When rotation is enabled, this is populated dynamically from model_rotator.
+    @property
+    def model_map(self) -> dict:
+        try:
+            from .model_rotator import get_catalog
+            return get_catalog().model_map
+        except Exception:
+            pass
+        return _FALLBACK_MODEL_MAP
+
+    @property
+    def public_models(self) -> list[dict]:
+        """Return exposed model list for /v1/models.
+        Strips internal fields like _backend."""
+        try:
+            from .model_rotator import get_catalog
+            return [{k: v for k, v in m.items() if not k.startswith("_")}
+                    for m in get_catalog().models]
+        except Exception:
+            pass
+        return [
+            {
+                "id": name,
+                "object": "model",
+                "created": 1700000000,
+                "owned_by": "onyx",
+            }
+            for name in _FALLBACK_MODEL_MAP
+        ]
 
     def deepseek_headers(self) -> dict:
         return {
@@ -46,18 +69,13 @@ class Settings:
         Unknown names pass through unchanged."""
         return self.model_map.get(model, model)
 
-    @property
-    def public_models(self) -> list[dict]:
-        """Return exposed model list for /v1/models."""
-        return [
-            {
-                "id": name,
-                "object": "model",
-                "created": 1700000000,
-                "owned_by": "onyx",
-            }
-            for name in self.model_map
-        ]
+
+_FALLBACK_MODEL_MAP = {
+    "onyx-flash": "deepseek-v4-flash",
+    "onyx-sonnet": "deepseek-v4-flash",
+    "onyx-pro": "deepseek-v4-pro",
+    "onyx-opus": "deepseek-v4-pro",
+}
 
 
 settings = Settings()
