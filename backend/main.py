@@ -5,6 +5,7 @@ OpenAI-compatible API that proxies requests to DeepSeek and logs all activity.
 
 import json
 import logging
+import os
 import secrets
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -302,37 +303,50 @@ async def register_key(
     request: Request,
     db: AsyncSession = Depends(get_session),
 ):
-    """Register a new API key. Requires invite code (closed beta)."""
+    """Register a new API key. Supports open registration or invite-only mode."""
     from .models import ApiKey, User, InviteCode
 
     body = await request.json() if await request.body() else {}
     key_name = body.get("name", "")
     invite_code = body.get("invite_code", "")
 
-    # Validate invite code
-    if not invite_code:
-        raise HTTPException(status_code=400, detail="Invite code required for closed beta")
+    open_reg = os.getenv("ONYX_OPEN_REGISTRATION", "").lower() in ("1", "true", "yes")
 
-    result = await db.execute(
-        select(InviteCode).where(
-            InviteCode.code == invite_code,
-            InviteCode.active == 1,
+    if not open_reg:
+        # Invite-only mode — validate invite code
+        if not invite_code:
+            raise HTTPException(status_code=400, detail="Invite code required for closed beta")
+
+        result = await db.execute(
+            select(InviteCode).where(
+                InviteCode.code == invite_code,
+                InviteCode.active == 1,
+            )
         )
-    )
-    invite = result.scalar_one_or_none()
-    if invite is None:
-        raise HTTPException(status_code=403, detail="Invalid or expired invite code")
+        invite = result.scalar_one_or_none()
+        if invite is None:
+            raise HTTPException(status_code=403, detail="Invalid or expired invite code")
+        if invite.max_uses > 0 and invite.use_count >= invite.max_uses:
+            raise HTTPException(status_code=403, detail="Invite code has reached maximum uses")
+        if invite.expires_at and invite.expires_at < _utcnow():
+            raise HTTPException(status_code=403, detail="Invite code has expired")
 
-    if invite.max_uses > 0 and invite.use_count >= invite.max_uses:
-        raise HTTPException(status_code=403, detail="Invite code has reached maximum uses")
-
-    if invite.expires_at and invite.expires_at < _utcnow():
-        raise HTTPException(status_code=403, detail="Invite code has expired")
-
-    # Consume invite
-    invite.use_count += 1
-    if invite.max_uses > 0 and invite.use_count >= invite.max_uses:
-        invite.active = 0
+        invite.use_count += 1
+        if invite.max_uses > 0 and invite.use_count >= invite.max_uses:
+            invite.active = 0
+    elif invite_code:
+        # Open registration with optional invite tracking
+        result = await db.execute(
+            select(InviteCode).where(
+                InviteCode.code == invite_code,
+                InviteCode.active == 1,
+            )
+        )
+        invite = result.scalar_one_or_none()
+        if invite is not None:
+            invite.use_count += 1
+            if invite.max_uses > 0 and invite.use_count >= invite.max_uses:
+                invite.active = 0
 
     new_key = "onyx-" + secrets.token_urlsafe(32)
     new_user = User(name=key_name or f"user_{new_key[:8]}")
@@ -344,7 +358,7 @@ async def register_key(
     await db.commit()
     await db.refresh(apikey)
 
-    log.info("Registered new API key %s for user %s with invite %s", apikey.id, new_user.id, invite_code)
+    log.info("Registered new API key %s for user %s (open_reg=%s)", apikey.id, new_user.id, open_reg)
     return {
         "api_key": new_key,
         "key_id": apikey.id,

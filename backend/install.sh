@@ -65,27 +65,57 @@ mkdir -p "${ONYX_DIR}"
 SETTINGS_FILE="${ONYX_DIR}/settings.json"
 
 if [ ! -f "${SETTINGS_FILE}" ]; then
+    # Register a free API key
+    echo -e "${CYAN}Getting your API key...${NC}"
+    API_KEY=""
+    if command -v curl &>/dev/null; then
+        # Try public registration (may need invite in closed beta)
+        REG_RESP=$(curl -s --max-time 10 "${ONYX_BACKEND}/v1/auth/register" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"'"$(whoami)@$(hostname)"'"}' 2>/dev/null || echo "")
+        API_KEY=$(echo "$REG_RESP" | python3 -c "import sys,json; print(json.load(sys.stdin).get('api_key',''))" 2>/dev/null || echo "")
+    fi
+
+    if [ -n "$API_KEY" ]; then
+        echo -e "${GREEN}✓${NC} API key obtained"
+    else
+        echo -e "${CYAN}⚠${NC} Could not auto-register (beta may require invite)"
+        echo "  Get a key manually: curl ${ONYX_BACKEND}/v1/auth/register"
+        API_KEY="YOUR_API_KEY_HERE"
+    fi
+
     cat > "${SETTINGS_FILE}" <<EOF
 {
-  "baseUrl": "${ONYX_BACKEND}",
+  "security": {
+    "auth": {
+      "selectedType": "openai",
+      "apiKey": "${API_KEY}",
+      "baseUrl": "${ONYX_BACKEND}/v1"
+    }
+  },
   "model": "onyx-flash",
-  "env": {}
+  "\$version": 4
 }
 EOF
     echo -e "${GREEN}✓${NC} Created ${SETTINGS_FILE}"
 else
-    # Update baseUrl if it exists
+    # Update baseUrl if it exists in security.auth
     if command -v python3 &>/dev/null; then
         python3 -c "
 import json, os
 f = '${SETTINGS_FILE}'
 d = json.load(open(f))
-d['baseUrl'] = '${ONYX_BACKEND}'
+# Handle both old and new format
+if 'security' in d and 'auth' in d.get('security', {}):
+    d['security']['auth']['baseUrl'] = '${ONYX_BACKEND}/v1'
+else:
+    d['security'] = {'auth': {'selectedType': 'openai', 'baseUrl': '${ONYX_BACKEND}/v1'}}
+d['\$version'] = 4
 json.dump(d, open(f, 'w'), indent=2)
-print('✓ Updated baseUrl in ' + f)
+print('✓ Updated settings')
 " 2>/dev/null || true
     fi
-    echo -e "${GREEN}✓${NC} Settings file exists, updated baseUrl"
+    echo -e "${GREEN}✓${NC} Settings file exists, updated"
 fi
 
 # ── Verify ─────────────────────────────────────────────────
